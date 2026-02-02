@@ -270,7 +270,8 @@ await new Promise(r => stream.on('finish', r));
 // =============================
 if (globalClient) {
   await globalClient.sendFile(
-    daftar.whatsapp,
+    toWAId(bayar.whatsapp),
+    //daftar.whatsapp,
     pdfPath,
     `${noPendaftaran}.pdf`,
     `✅ *Pembayaran Berhasil*
@@ -285,7 +286,7 @@ Password: *${password}*
 📄 Bukti pendaftaran terlampir`
   );
   await globalClient.sendText(
-    daftar.whatsapp,
+    toWAId(daftar.whatsapp),
     '✍️ Ketik *kembali* untuk kembali ke menu.'
   );
 }
@@ -411,7 +412,7 @@ function generatePassword(length = 6) {
   return pass;
 }
 
-async function simpanLogin(username, password, data) {
+async function simpanLogin(username, password, data, waNumber) {
   const { data: res, error } = await supabase
     .from('akun_login')
     .insert({
@@ -419,7 +420,7 @@ async function simpanLogin(username, password, data) {
       password: password.trim(),
       nama: data.nama,
       jenjang: data.jenjang,
-      whatsapp: data.whatsapp_from
+      whatsapp: waNumber
     })
     .select();
 
@@ -564,14 +565,19 @@ async function getKuotaDashboard() {
 // 📬 Fungsi utama
 // =============================
 async function start(client) {
+  
   client.onMessage(async (message) => {
     try {
+      const waId = message.from;           // 62812xxx@c.us
+const waNumber = normalizeWA(waId);  // 62812xxx
+
+
       const from = message.from;
       const textMsg = (message.body || "").toLowerCase();
 // =============================
 // 🔒 MODE PEMBAYARAN AKTIF
 // =============================
-if (paymentSessions.has(from) && textMsg !== 'batal') {
+if (paymentSessions.has(waNumber) && textMsg !== 'batal') {
   await client.sendText(
     from,
 `⏳ *Pembayaran Masih Menunggu*
@@ -588,15 +594,15 @@ Silakan:
 // =============================
 // ❌ BATAL PEMBAYARAN 
 // =============================
-if (textMsg === 'batal' && paymentSessions.has(from)) {
+if (textMsg === 'batal' && paymentSessions.has(waNumber)) {
 
   // 🛑 hentikan timer
-  if (paymentTimeouts.has(from)) {
+  if (paymentTimeouts.has(waNumber)) {
     clearTimeout(paymentTimeouts.get(from));
-    paymentTimeouts.delete(from);
+    paymentTimeouts.delete(waNumber);
   }
 
-  const session = paymentSessions.get(from);
+  const session = paymentSessions.get(waNumber);
   if (!session) {
     console.warn('⚠️ paymentSession kosong saat batal:', from);
     return;
@@ -617,7 +623,7 @@ if (textMsg === 'batal' && paymentSessions.has(from)) {
     .eq('no_pendaftaran', no_pendaftaran);
 
   // 3️⃣ BERSIHKAN SESSION
-  paymentSessions.delete(from);
+  paymentSessions.delete(waNumber);
   sessions.delete(from);
 
   await client.sendText(
@@ -1207,12 +1213,13 @@ case 'spmb':
                       }
                                  
                       case 'konfirmasi_bayar': {
-                        if (!paymentSessions.has(from)) {
+                        if (!paymentSessions.has(waNumber)) {
                           await client.sendText(from, '⚠️ Tidak ada transaksi aktif.');
                           return;
                         }
                       
-                        const { orderId, data } = paymentSessions.get(from);
+                        const { orderId, no_pendaftaran } = paymentSessions.get(waNumber);
+
                       
                         // SIMULASI SETTLEMENT MIDTRANS
                         await simulateSettlement(orderId);
@@ -1268,7 +1275,7 @@ case 'spmb':
                           from,
                           '✍️ Ketik *kembali* untuk kembali ke menu.'
                         );
-                        paymentSessions.delete(from);
+                        paymentSessions.delete(waNumber);
                         break;
                       }                      
                 case 'kontak':
@@ -1820,7 +1827,7 @@ Jika tidak ada, boleh dikosongkan.`
   return;
 }
 
-    const sudahAda = await cekSudahDaftar(from, data.nama); 
+const sudahAda = await cekSudahDaftar(waNumber, data.nama);
     
     if (sudahAda) {
       await client.sendText(
@@ -1892,7 +1899,7 @@ Pendaftaran Anda *tetap diterima* dan akan diproses oleh panitia.`
     no_hp1: data.no_hp1,
     no_hp2: data.no_hp2 || null,
     email: data.email,
-    whatsapp: from
+    whatsapp: waNumber
   })
   .select()
   .single();
@@ -1916,7 +1923,7 @@ const { error: bayarErr } = await supabase
   .insert({
     order_id: orderIdMidtrans,
     no_pendaftaran: idPendaftaran,
-    whatsapp: from,
+    whatsapp: waNumber,
     gross_amount: biaya,
     payment_type: 'snap',
     transaction_status: 'pending'
@@ -1969,19 +1976,21 @@ await supabase
     (Setelah pembayaran, sistem akan memproses secara otomatis)`
     );    
 
-    paymentSessions.set(from, {
+    paymentSessions.set(waNumber, {
       orderId: orderIdMidtrans,
       no_pendaftaran: idPendaftaran
     });
+    
 
     // =============================
 // ⏳ AUTO BATAL 30 MENIT
 // =============================
 const timeoutId = setTimeout(async () => {
   // cek apakah masih pending
-  if (!paymentSessions.has(from)) return;
+  if (!paymentSessions.has(waNumber))
+ return;
 
-  const { orderId, no_pendaftaran } = paymentSessions.get(from);
+ const { orderId, no_pendaftaran } = paymentSessions.get(waNumber);
 
   console.log('⏳ AUTO BATAL PEMBAYARAN:', orderId);
 
@@ -1997,8 +2006,8 @@ const timeoutId = setTimeout(async () => {
     .delete()
     .eq('no_pendaftaran', no_pendaftaran);
 
-  paymentSessions.delete(from);
-  paymentTimeouts.delete(from);
+    paymentSessions.delete(waNumber);
+  //paymentTimeouts.delete(from);
 
   if (globalClient) {
     await globalClient.sendText(
@@ -2014,7 +2023,7 @@ dalam *30 menit*.
   }
 }, 30 * 60 * 1000); // 30 menit
 
-paymentTimeouts.set(from, timeoutId);
+paymentTimeouts.set(waNumber, timeoutId);
 
 
     sessions.delete(from);
@@ -2045,6 +2054,17 @@ function normalizeLanjutanData(data) {
         : false
   };
 }
+
+function normalizeWA(from) {
+  // dari: 62812xxxx@c.us
+  return from.replace('@c.us', '');
+}
+
+function toWAId(number) {
+  // dari: 62812xxxx
+  return `${number}@c.us`;
+}
+
 
 function getMissingRequiredFields(data) {
   const requiredFields = {
