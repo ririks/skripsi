@@ -24,16 +24,42 @@ server.use(cors({
 server.get('/qr', (req, res) => {
   if (!lastQR) {
     return res.send(`
-      <h2>✅ Bot WhatsApp Aktif</h2>
-      <p>Bot sudah login dan siap digunakan.</p>
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <title>QR WhatsApp</title>
+        </head>
+        <body style="text-align:center;font-family:sans-serif">
+          <h2>⏳ Menunggu QR</h2>
+          <p>Bot belum siap atau sudah login</p>
+        </body>
+      </html>
     `);
   }
 
+  res.setHeader('Content-Type', 'text/html');
   res.send(`
-    <h2>Scan QR WhatsApp</h2>
-    <img src="${lastQR}" width="300"/>
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8" />
+        <title>Scan QR WhatsApp</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </head>
+      <body style="text-align:center;font-family:sans-serif">
+        <h2>Scan QR WhatsApp</h2>
+        <img 
+          src="${lastQR}" 
+          alt="QR WhatsApp"
+          style="width:300px;height:300px;border:1px solid #ccc"
+        />
+        <p>Scan menggunakan WhatsApp → Perangkat Tertaut</p>
+      </body>
+    </html>
   `);
 });
+
 
 
 server.get('/qr-image', (req, res) => {
