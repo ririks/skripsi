@@ -353,7 +353,7 @@ function formatWA(number) {
   return `${n}@c.us`;
 }
 
-const qrcode = require('qrcode');
+//onst qrcode = require('qrcode');
 
 wppconnect.create({
   session: 'ppdbBotv2',
@@ -366,14 +366,14 @@ wppconnect.create({
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--single-process'
+      '--disable-gpu'
     ]
   },
 
-  catchQR: async (qrCode) => {
-    lastQR = await qrcode.toDataURL(qrCode);
-    console.log('✅ QR diterima');
+  catchQR: (qrCode, asciiQR, attempt, urlCode) => {
+    // ⛔ JANGAN encode ulang
+    lastQR = urlCode; // ← INI SUDAH DATA URL
+    console.log('✅ QR diterima (URL)');
   },
 
   statusFind: (status) => {
@@ -385,6 +385,7 @@ wppconnect.create({
   start(client);
 })
 .catch(console.error);
+
 
 
 function getKelompokJenjang(kodeJenjang) {
