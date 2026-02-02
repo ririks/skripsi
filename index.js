@@ -289,7 +289,7 @@ Password: *${password}*
     );
 
     await globalClient.sendText(
-      waTarget,
+      formatWA(waTarget),
       '✍️ Ketik *kembali* untuk kembali ke menu.'
     );
 
@@ -575,7 +575,7 @@ async function getKuotaDashboard() {
 async function start(client) {
   client.onMessage(async (message) => {
     try {
-      const from = message.from;
+      const waUser = getUserWA(message);
       const textMsg = (message.body || "").toLowerCase();
 // =============================
 // 🔒 MODE PEMBAYARAN AKTIF
@@ -698,7 +698,7 @@ if (textMsg === 'kembali') {
   
 
 
-  loggedInUsers.set(from, {
+  loggedInUsers.set(waUser, {
     username: user.username,
     nama: user.nama,
     jenjang: user.jenjang
@@ -1018,7 +1018,7 @@ if (
 
     // 🔐 LOGIN
     if (selected === 'login') {
-      sessions.set(from, { mode: 'login' });
+      sessions.set(waUser, { mode: 'login' });
       await client.sendText(
         from,
 `🔐 *Masuk Akun SPMB*
@@ -1300,7 +1300,7 @@ await simpanLogin(username, password, data);
                   });
                   break;
                   case 'login':
-                    sessions.set(from, { mode: 'login' });
+                    sessions.set(waUser, { mode: 'login' });
 
                     await client.sendText(from, 
                     `🔐 *Login SPMB*
@@ -1357,7 +1357,7 @@ await simpanLogin(username, password, data);
                     }
                   
                     // ✅ BARU SET SESSION
-                    lanjutanSessions.set(from, {
+                    lanjutanSessions.set(waUser, {
                       no_pendaftaran: userLogin.username
                     });
                   
@@ -1664,7 +1664,7 @@ async function kirimFormDariTemplate(client, from) {
   }
 
   // SET SESSION SAMA SEPERTI SEKARANG
-  sessions.set(from, { mode: 'combined' });
+  sessions.set(waUser, { mode: 'combined' });
 
   await client.sendText(
     from,
@@ -1744,7 +1744,7 @@ Ketik *batal* untuk membatalkan.
 
 Note: Jenjang Pendidkan ada Toddler, Playgroup, Kelompok A, Kelompok B, SD, SMP, SMA`;
 
-  sessions.set(from, { mode: 'combined' });
+  sessions.set(waUser, { mode: 'combined' });
   await client.sendText(from, text);
 }
 
@@ -1904,7 +1904,7 @@ Pendaftaran Anda *tetap diterima* dan akan diproses oleh panitia.`
     no_hp2: data.no_hp2 || null,
     email: data.email,
     whatsapp: normalizePhone(data.no_hp1),
-    wa_target: from
+    wa_target: waUser
   })
   .select()
   .single();
@@ -1929,7 +1929,7 @@ const { error: bayarErr } = await supabase
     order_id: orderIdMidtrans,
     no_pendaftaran: idPendaftaran,
     whatsapp: normalizePhone(data.no_hp1),
-    wa_target: from,
+    wa_target: waUser,
     gross_amount: biaya,
     payment_type: 'snap',
     transaction_status: 'pending'
@@ -1982,7 +1982,7 @@ await supabase
     (Setelah pembayaran, sistem akan memproses secara otomatis)`
     );    
 
-    paymentSessions.set(from, {
+    paymentSessions.set(waUser, {
       orderId: orderIdMidtrans,
       no_pendaftaran: idPendaftaran
     });
@@ -2088,6 +2088,11 @@ function getMissingRequiredFields(data) {
   }
 
   return missing;
+}
+
+function getUserWA(message) {
+  // from = 628xxx@c.us
+  return message.from.replace('@c.us', '');
 }
 
 function isValidGmail(email) {
@@ -2290,11 +2295,11 @@ function getPrefixByJenjang(jenjang) {
 }
 
 
-async function cekSudahDaftar(whatsapp, nama) {
+async function cekSudahDaftar(waUser, nama) {
   const { data, error } = await supabase
     .from('pendaftaran')
     .select('id')
-    .eq('whatsapp', whatsapp)
+    .eq('whatsapp', waUser)
     .ilike('nama', nama) // case-insensitive
     .limit(1);
 
@@ -2305,6 +2310,9 @@ async function cekSudahDaftar(whatsapp, nama) {
 
   return data && data.length > 0;
 }
+
+const waUser = getUserWA(message);
+const sudahAda = await cekSudahDaftar(waUser, data.nama);
 
 // =============================
 // 📋 Menu WhatsApp
