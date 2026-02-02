@@ -1831,7 +1831,7 @@ Jika tidak ada, boleh dikosongkan.`
   return;
 }
 
-    const sudahAda = await cekSudahDaftar(from, data.nama); 
+const sudahAda = await cekSudahDaftar(waUser, data.nama);
     
     if (sudahAda) {
       await client.sendText(
@@ -2312,7 +2312,6 @@ async function cekSudahDaftar(waUser, nama) {
 }
 
 const waUser = getUserWA(message);
-const sudahAda = await cekSudahDaftar(waUser, data.nama);
 
 // =============================
 // 📋 Menu WhatsApp
