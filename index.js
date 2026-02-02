@@ -269,7 +269,7 @@ await new Promise(r => stream.on('finish', r));
 // 📲 KIRIM PDF KE WHATSAPP
 // =============================
 if (globalClient) {
-  const waTarget = `${bayar.whatsapp}@c.us`;
+  const waTarget = bayar.wa_target;
 
   try {
     await globalClient.sendFile(
@@ -1902,6 +1902,7 @@ Pendaftaran Anda *tetap diterima* dan akan diproses oleh panitia.`
     no_hp2: data.no_hp2 || null,
     email: data.email,
     whatsapp: normalizePhone(data.no_hp1)
+    wa_target: from
   })
   .select()
   .single();
@@ -1926,6 +1927,7 @@ const { error: bayarErr } = await supabase
     order_id: orderIdMidtrans,
     no_pendaftaran: idPendaftaran,
     whatsapp: normalizePhone(data.no_hp1),
+    wa_target: from,
     gross_amount: biaya,
     payment_type: 'snap',
     transaction_status: 'pending'
