@@ -895,6 +895,23 @@ row('Pekerjaan Ibu', data.pekerjaan_ibu);
 row('Pendidikan Ibu', data.pendidikan_ibu);
 row('No HP Ibu', data.no_hp_ibu);
 
+// ===== DATA WALI (OPSIONAL) =====
+if (
+  lanjutan.nama_wali ||
+  lanjutan.pekerjaan_wali ||
+  lanjutan.no_hp_wali
+) {
+  doc.moveDown();
+  doc.font('Helvetica-Bold').text('D. DATA WALI');
+  doc.moveDown(0.5);
+  doc.font('Helvetica');
+
+  row('Nama Wali', lanjutan.nama_wali || '-');
+  row('Pekerjaan Wali', lanjutan.pekerjaan_wali || '-');
+  row('No HP Wali', lanjutan.no_hp_wali || '-');
+  row('Hubungan Wali', lanjutan.hubungan_wali || '-');
+}
+
 doc.moveDown();
 
 // ===== ALAMAT =====
@@ -924,6 +941,8 @@ row(
   data.kebutuhan_khusus?.toLowerCase().includes('ya') ? 'Ya' : 'Tidak'
 );
 row('Keterangan Khusus', data.keterangan_khusus || '-');
+
+
 
 // ===== FOOTER =====
 doc.moveDown(2);
@@ -1377,6 +1396,13 @@ Silakan isi data berikut dalam *SATU PESAN* seperti contoh:
 17. Penghasilan Orang Tua:
 18. Kebutuhan Khusus (ya/tidak):
 19. Keterangan Khusus:
+
+(Opsional - jika ada wali)
+
+20. Nama Wali:
+21. Pekerjaan Wali:
+22. No HP Wali:
+23. Hubungan dengan Murid:
 ketik *batal* untuk membatalkan.`
                     );
                     break;
@@ -2042,7 +2068,11 @@ function normalizeLanjutanData(data) {
     kebutuhan_khusus:
       typeof rest.kebutuhan_khusus === 'string'
         ? rest.kebutuhan_khusus.toLowerCase().includes('ya')
-        : false
+        : false,
+        no_hp_wali: rest.no_hp_wali || null,
+        nama_wali: rest.nama_wali || null,
+        pekerjaan_wali: rest.pekerjaan_wali || null,
+        hubungan_wali: rest.hubungan_wali || null
   };
 }
 
@@ -2105,6 +2135,7 @@ function getMissingLanjutanFields(data) {
     penghasilan_orangtua: 'Penghasilan Orang Tua',
     kebutuhan_khusus: 'Kebutuhan Khusus',
     //keterangan_khusus: 'Keterangan Khusus'
+    
   };
 
   const missing = [];
@@ -2141,6 +2172,11 @@ function parseFormLanjutan(text) {
     penghasilan_orangtua: '',
     kebutuhan_khusus: '',
     keterangan_khusus: '',
+
+    nama_wali: '',
+    pekerjaan_wali: '',
+    no_hp_wali: '',
+    hubungan_wali: '',
     raw_input: text
   };
 
@@ -2170,6 +2206,11 @@ function parseFormLanjutan(text) {
     else if (lower.includes('penghasilan')) data.penghasilan_orangtua ||= val;
     else if (lower.includes('kebutuhan khusus')) data.kebutuhan_khusus ||= val;
     else if (lower.includes('keterangan')) data.keterangan_khusus ||= val;
+
+    else if (lower.includes('nama wali')) data.nama_wali ||= val;
+    else if (lower.includes('pekerjaan wali')) data.pekerjaan_wali ||= val;
+    else if (lower.includes('hp wali')) data.no_hp_wali ||= val;
+    else if (lower.includes('hubungan wali')) data.hubungan_wali ||= val;
   }
 
   return data;
