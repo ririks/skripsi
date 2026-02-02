@@ -1239,9 +1239,11 @@ case 'spmb':
 
                       
                         // ===== GENERATE AKUN =====
-                        const username = orderId;
-                        const password = generatePassword();
-                        await simpanLogin(username, password, data);
+                        const { no_pendaftaran } = paymentSessions.get(from);
+                        const username = no_pendaftaran;
+const password = generatePassword();
+
+await simpanLogin(username, password, data);
                       
                         // ===== GENERATE PDF =====
                         const pdfPath = path.join(PDF_FOLDER, `${orderId}.pdf`);
