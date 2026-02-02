@@ -13,6 +13,7 @@ const cors = require('cors');
 const QR_PATH = path.join(__dirname, 'qr.png');
 const server = express();
 let lastQR = null;   
+
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 // ✅ CORS HARUS SETELAH server dibuat
@@ -23,24 +24,13 @@ server.use(cors({
 }));
 server.get('/qr', (req, res) => {
   if (!lastQR) {
-    return res.send(`
-      <h2>⏳ Menunggu QR</h2>
-    `);
+    return res.send('<h2>Menunggu QR...</h2>');
   }
 
   res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <title>Scan QR WhatsApp</title>
-    </head>
-    <body style="text-align:center;font-family:sans-serif">
-      <h2>Scan QR WhatsApp</h2>
-      <img src="${lastQR}" width="300" height="300" />
-      <p>Scan menggunakan WhatsApp → Perangkat Tertaut</p>
-    </body>
-    </html>
+    <h2>Scan QR WhatsApp</h2>
+    <img src="${lastQR}" width="350"/>
+    <p>Scan menggunakan WhatsApp → Perangkat Tertaut</p>
   `);
 });
 
@@ -361,7 +351,7 @@ function formatWA(number) {
   return `${n}@c.us`;
 }
 
-//onst qrcode = require('qrcode');
+const QRCode = require('qrcode');
 
 wppconnect.create({
   session: 'ppdbBotv2',
@@ -378,23 +368,20 @@ wppconnect.create({
     ]
   },
 
-  catchQR: (qrCode, asciiQR, attempt, urlCode) => {
-    if (!urlCode) return;
-  
-    // hapus newline & spasi
-    let clean = urlCode.replace(/\s/g, '');
-  
-    // pastikan ada prefix data:image
-    if (!clean.startsWith('data:image')) {
-      clean = 'data:image/png;base64,' + clean;
+  catchQR: async (qrCode) => {
+    try {
+      lastQR = await QRCode.toDataURL(qrCode, {
+        errorCorrectionLevel: 'L',
+        width: 350,
+        margin: 1
+      });
+
+      console.log('✅ QR IMAGE GENERATED');
+      console.log('QR length:', lastQR.length); // HARUS > 5000
+    } catch (err) {
+      console.error('❌ QR GENERATE ERROR:', err);
     }
-  
-    lastQR = clean;
-  
-    console.log('✅ QR diterima (FIXED)');
-    console.log('QR length:', lastQR.length);
-  },  
-  
+  },
 
   statusFind: (status) => {
     console.log('📡 STATUS SESSION:', status);
@@ -405,6 +392,7 @@ wppconnect.create({
   start(client);
 })
 .catch(console.error);
+
 
 
 
