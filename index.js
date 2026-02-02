@@ -1875,7 +1875,7 @@ Pendaftaran Anda *tetap diterima* dan akan diproses oleh panitia.`
     const idPendaftaran = await generateNoPendaftaran(data.jenjang);
 
     //data.id = idPendaftaran;
-    const phoneNumber = extractPhoneNumber(from);
+    data.whatsapp_from = from;
 
     // ===== SIMPAN PENDAFTARAN =====
     const { data: insertData, error: insertErr } = await supabase
@@ -1892,7 +1892,7 @@ Pendaftaran Anda *tetap diterima* dan akan diproses oleh panitia.`
     no_hp1: data.no_hp1,
     no_hp2: data.no_hp2 || null,
     email: data.email,
-    whatsapp: phoneNumber
+    whatsapp: from
   })
   .select()
   .single();
@@ -1909,6 +1909,7 @@ console.log('✅ PENDAFTARAN TERSIMPAN:', insertData);
     // ===== MIDTRANS SNAP =====
     const orderIdMidtrans = generateOrderId(idPendaftaran);
     const biaya = getBiayaByJenjang(data.jenjang);
+
 // 1️⃣ SIMPAN PEMBAYARAN DULU
 const { error: bayarErr } = await supabase
   .from('pembayaran')
@@ -2237,15 +2238,9 @@ function getBiayaByJenjang(jenjang) {
     return 400000;
   }
 
+  // default (jaga-jaga)
   return 300000;
 }
-
-function extractPhoneNumber(from) {
-  if (!from) return null;
-  return from.replace('@c.us', '');
-}
-
-
 
 function getKodeJenjang(jenjang) {
   const j = jenjang.toLowerCase();
@@ -2256,7 +2251,6 @@ function getKodeJenjang(jenjang) {
   if (j.includes('sd')) return '01';
   if (j.includes('smp')) return '07';
   if (j.includes('sma')) return '10';
-
   return '00';
 }
 
