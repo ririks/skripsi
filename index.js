@@ -2046,7 +2046,7 @@ function normalizeLanjutanData(data) {
         ? rest.kebutuhan_khusus.toLowerCase().includes('ya')
         : false
   };
-}z
+}
 
 function normalizePhone(number) {
   let n = number.replace(/\D/g, '');
