@@ -269,14 +269,11 @@ await new Promise(r => stream.on('finish', r));
 // 📲 KIRIM PDF KE WHATSAPP
 // =============================
 if (globalClient) {
-  const waTarget = bayar.wa_target;
-
-  try {
-    await globalClient.sendFile(
-      waTarget,
-      pdfPath,
-      `${noPendaftaran}.pdf`,
-      `✅ *Pembayaran Berhasil*
+  await globalClient.sendFile(
+    daftar.whatsapp,
+    pdfPath,
+    `${noPendaftaran}.pdf`,
+    `✅ *Pembayaran Berhasil*
 
 🆔 Order ID: *${notif.order_id}*
 👤 Nama: ${daftar.nama}
@@ -286,18 +283,12 @@ Username: *${username}*
 Password: *${password}*
 
 📄 Bukti pendaftaran terlampir`
-    );
-
-    await globalClient.sendText(
-      formatWA(waTarget),
-      '✍️ Ketik *kembali* untuk kembali ke menu.'
-    );
-
-  } catch (waErr) {
-    console.error('❌ GAGAL KIRIM WA:', waErr.message);
-  }
+  );
+  await globalClient.sendText(
+    daftar.whatsapp,
+    '✍️ Ketik *kembali* untuk kembali ke menu.'
+  );
 }
-
 
 
     res.status(200).send('OK');
@@ -428,7 +419,7 @@ async function simpanLogin(username, password, data) {
       password: password.trim(),
       nama: data.nama,
       jenjang: data.jenjang,
-      //whatsapp: data.whatsapp_from
+      whatsapp: data.whatsapp_from
     })
     .select();
 
@@ -575,7 +566,7 @@ async function getKuotaDashboard() {
 async function start(client) {
   client.onMessage(async (message) => {
     try {
-      const waUser = getUserWA(message);
+      const from = message.from;
       const textMsg = (message.body || "").toLowerCase();
 // =============================
 // 🔒 MODE PEMBAYARAN AKTIF
@@ -698,7 +689,7 @@ if (textMsg === 'kembali') {
   
 
 
-  loggedInUsers.set(waUser, {
+  loggedInUsers.set(from, {
     username: user.username,
     nama: user.nama,
     jenjang: user.jenjang
@@ -1018,7 +1009,7 @@ if (
 
     // 🔐 LOGIN
     if (selected === 'login') {
-      sessions.set(waUser, { mode: 'login' });
+      sessions.set(from, { mode: 'login' });
       await client.sendText(
         from,
 `🔐 *Masuk Akun SPMB*
@@ -1239,11 +1230,9 @@ case 'spmb':
 
                       
                         // ===== GENERATE AKUN =====
-                        const { no_pendaftaran } = paymentSessions.get(from);
-                        const username = no_pendaftaran;
-const password = generatePassword();
-
-await simpanLogin(username, password, data);
+                        const username = orderId;
+                        const password = generatePassword();
+                        await simpanLogin(username, password, data);
                       
                         // ===== GENERATE PDF =====
                         const pdfPath = path.join(PDF_FOLDER, `${orderId}.pdf`);
@@ -1300,7 +1289,7 @@ await simpanLogin(username, password, data);
                   });
                   break;
                   case 'login':
-                    sessions.set(waUser, { mode: 'login' });
+                    sessions.set(from, { mode: 'login' });
 
                     await client.sendText(from, 
                     `🔐 *Login SPMB*
@@ -1357,7 +1346,7 @@ await simpanLogin(username, password, data);
                     }
                   
                     // ✅ BARU SET SESSION
-                    lanjutanSessions.set(waUser, {
+                    lanjutanSessions.set(from, {
                       no_pendaftaran: userLogin.username
                     });
                   
@@ -1664,7 +1653,7 @@ async function kirimFormDariTemplate(client, from) {
   }
 
   // SET SESSION SAMA SEPERTI SEKARANG
-  sessions.set(waUser, { mode: 'combined' });
+  sessions.set(from, { mode: 'combined' });
 
   await client.sendText(
     from,
@@ -1744,7 +1733,7 @@ Ketik *batal* untuk membatalkan.
 
 Note: Jenjang Pendidkan ada Toddler, Playgroup, Kelompok A, Kelompok B, SD, SMP, SMA`;
 
-  sessions.set(waUser, { mode: 'combined' });
+  sessions.set(from, { mode: 'combined' });
   await client.sendText(from, text);
 }
 
@@ -1831,7 +1820,7 @@ Jika tidak ada, boleh dikosongkan.`
   return;
 }
 
-const sudahAda = await cekSudahDaftar(waUser, data.nama);
+    const sudahAda = await cekSudahDaftar(from, data.nama); 
     
     if (sudahAda) {
       await client.sendText(
@@ -1886,7 +1875,7 @@ Pendaftaran Anda *tetap diterima* dan akan diproses oleh panitia.`
     const idPendaftaran = await generateNoPendaftaran(data.jenjang);
 
     //data.id = idPendaftaran;
-    //data.whatsapp_from = from;
+    data.whatsapp_from = from;
 
     // ===== SIMPAN PENDAFTARAN =====
     const { data: insertData, error: insertErr } = await supabase
@@ -1903,8 +1892,7 @@ Pendaftaran Anda *tetap diterima* dan akan diproses oleh panitia.`
     no_hp1: data.no_hp1,
     no_hp2: data.no_hp2 || null,
     email: data.email,
-    whatsapp: normalizePhone(data.no_hp1),
-    wa_target: waUser
+    whatsapp: from
   })
   .select()
   .single();
@@ -1928,8 +1916,7 @@ const { error: bayarErr } = await supabase
   .insert({
     order_id: orderIdMidtrans,
     no_pendaftaran: idPendaftaran,
-    whatsapp: normalizePhone(data.no_hp1),
-    wa_target: waUser,
+    whatsapp: from,
     gross_amount: biaya,
     payment_type: 'snap',
     transaction_status: 'pending'
@@ -1982,7 +1969,7 @@ await supabase
     (Setelah pembayaran, sistem akan memproses secara otomatis)`
     );    
 
-    paymentSessions.set(waUser, {
+    paymentSessions.set(from, {
       orderId: orderIdMidtrans,
       no_pendaftaran: idPendaftaran
     });
@@ -2059,14 +2046,6 @@ function normalizeLanjutanData(data) {
   };
 }
 
-function normalizePhone(number) {
-  let n = number.replace(/\D/g, '');
-  if (n.startsWith('0')) n = '62' + n.slice(1);
-  if (!n.startsWith('62')) n = '62' + n;
-  return n;
-}
-
-
 function getMissingRequiredFields(data) {
   const requiredFields = {
     jenis_pendaftaran: 'Jenis Pendaftaran',
@@ -2088,11 +2067,6 @@ function getMissingRequiredFields(data) {
   }
 
   return missing;
-}
-
-function getUserWA(message) {
-  // from = 628xxx@c.us
-  return message.from.replace('@c.us', '');
 }
 
 function isValidGmail(email) {
@@ -2295,11 +2269,11 @@ function getPrefixByJenjang(jenjang) {
 }
 
 
-async function cekSudahDaftar(waUser, nama) {
+async function cekSudahDaftar(whatsapp, nama) {
   const { data, error } = await supabase
     .from('pendaftaran')
     .select('id')
-    .eq('whatsapp', waUser)
+    .eq('whatsapp', whatsapp)
     .ilike('nama', nama) // case-insensitive
     .limit(1);
 
@@ -2359,4 +2333,4 @@ setInterval(() => {
       ).catch(console.error);
     }
   }
-}, 60 * 1000);
+}, 60 * 1000);  
