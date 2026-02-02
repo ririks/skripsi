@@ -979,7 +979,7 @@ return; // 🔴 WAJIB
               if (selected && selected !== 'daftar') {
                 sessions.delete(from);
               } else {
-                await handleCombinedForm(client, message, from);
+                await handleCombinedForm(client, message, from, waNumber);
                 return;
               }
             }
@@ -1747,7 +1747,7 @@ Note: Jenjang Pendidkan ada Toddler, Playgroup, Kelompok A, Kelompok B, SD, SMP,
 // =============================
 // 📥 Handle Form + Generate & Kirim PDF
 // =============================
-async function handleCombinedForm(client, message, from) {
+async function handleCombinedForm(client, message, from, waNumber)   {
   const text = (message.body || '').trim();
 
   // batal
