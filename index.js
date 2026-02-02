@@ -109,8 +109,6 @@ server.post('/midtrans/webhook', async (req, res) => {
 
     const notif = req.body;
 
-
-
     // ABAIKAN STATUS GAGAL
     if (!['settlement', 'capture'].includes(notif.transaction_status)) {
       return res.status(200).send('IGNORED');
@@ -127,15 +125,12 @@ server.post('/midtrans/webhook', async (req, res) => {
       console.warn('⏳ Pembayaran belum ada, tunggu retry:', notif.order_id);
       return res.status(200).send('OK');
     }
-    if (paymentTimeouts.has(waFrom)) {
-  clearTimeout(paymentTimeouts.get(waFrom));
-  paymentTimeouts.delete(waFrom);
-}
-
-const waFrom = formatWA(bayar.whatsapp);
-
-paymentSessions.delete(waFrom);
-
+    if (paymentTimeouts.has(bayar.whatsapp)) {
+      clearTimeout(paymentTimeouts.get(bayar.whatsapp));
+      paymentTimeouts.delete(bayar.whatsapp);
+    }
+    
+    paymentSessions.delete(bayar.whatsapp);
     const noPendaftaran = bayar.no_pendaftaran;
     // Update status pembayaran
     await supabase
@@ -171,7 +166,7 @@ await supabase.from('akun_login').insert({
   password,
   nama: daftar.nama,
   jenjang: daftar.jenjang,
-  whatsapp: extractPhoneNumber(daftar.whatsapp)
+  whatsapp: daftar.whatsapp
 });
 
 // =============================
@@ -274,8 +269,8 @@ await new Promise(r => stream.on('finish', r));
 // 📲 KIRIM PDF KE WHATSAPP
 // =============================
 if (globalClient) {
- await globalClient.sendFile(
-  waFrom,
+  await globalClient.sendFile(
+    daftar.whatsapp,
     pdfPath,
     `${noPendaftaran}.pdf`,
     `✅ *Pembayaran Berhasil*
@@ -290,10 +285,9 @@ Password: *${password}*
 📄 Bukti pendaftaran terlampir`
   );
   await globalClient.sendText(
-  waFrom,
-  '✍️ Ketik *kembali* untuk kembali ke menu.'
-);
-
+    daftar.whatsapp,
+    '✍️ Ketik *kembali* untuk kembali ke menu.'
+  );
 }
 
 
@@ -425,7 +419,7 @@ async function simpanLogin(username, password, data) {
       password: password.trim(),
       nama: data.nama,
       jenjang: data.jenjang,
-      whatsapp: extractPhoneNumber(daftar.whatsapp)
+      whatsapp: data.whatsapp_from
     })
     .select();
 
@@ -1921,8 +1915,7 @@ const { error: bayarErr } = await supabase
   .insert({
     order_id: orderIdMidtrans,
     no_pendaftaran: idPendaftaran,
-    whatsapp: extractPhoneNumber(from),
-    //wa_from: from, 
+    whatsapp: from,
     gross_amount: biaya,
     payment_type: 'snap',
     transaction_status: 'pending'
@@ -2263,6 +2256,7 @@ function getKodeJenjang(jenjang) {
   if (j.includes('sd')) return '01';
   if (j.includes('smp')) return '07';
   if (j.includes('sma')) return '10';
+
   return '00';
 }
 
@@ -2285,7 +2279,7 @@ async function cekSudahDaftar(whatsapp, nama) {
   const { data, error } = await supabase
     .from('pendaftaran')
     .select('id')
-    .eq('whatsapp', extractPhoneNumber(whatsapp))
+    .eq('whatsapp', whatsapp)
     .ilike('nama', nama) // case-insensitive
     .limit(1);
 
