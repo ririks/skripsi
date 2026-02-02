@@ -24,20 +24,17 @@ server.use(cors({
 server.get('/qr', (req, res) => {
   if (!lastQR) {
     return res.send(`
-      <h3>QR belum tersedia</h3>
-      <p>Bot sudah login atau QR belum di-generate</p>
+      <h2>✅ Bot WhatsApp Aktif</h2>
+      <p>Bot sudah login dan siap digunakan.</p>
     `);
   }
 
   res.send(`
-    <html>
-      <body style="text-align:center">
-        <h2>Scan QR WhatsApp Bot</h2>
-        <img src="${lastQR}" width="300"/>
-      </body>
-    </html>
+    <h2>Scan QR WhatsApp</h2>
+    <img src="${lastQR}" width="300"/>
   `);
 });
+
 
 server.get('/qr-image', (req, res) => {
   if (!fs.existsSync(QR_PATH)) {
@@ -371,7 +368,11 @@ wppconnect.create({
 
   statusFind: (status) => {
     console.log('📡 STATUS SESSION:', status);
+    if (status === 'isLogged') {
+      console.log('✅ BOT SUDAH LOGIN — QR TIDAK DIPERLUKAN');
+    }
   }
+  
 })
 .then(client => {
   globalClient = client;
