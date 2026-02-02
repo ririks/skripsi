@@ -29,17 +29,20 @@ server.get('/qr', (req, res) => {
 
   res.send(`
     <h2>Scan QR WhatsApp</h2>
-    <img src="${lastQR}" width="350"/>
+    <pre style="
+      font-size:8px;
+      line-height:8px;
+      font-family:monospace;
+      background:#fff;
+      padding:10px;
+      display:inline-block;
+    ">
+${lastQR}
+    </pre>
     <p>Scan menggunakan WhatsApp → Perangkat Tertaut</p>
   `);
 });
 
-server.get('/qr-image', (req, res) => {
-  if (!fs.existsSync(QR_PATH)) {
-    return res.status(404).send('QR belum ada');
-  }
-  res.sendFile(QR_PATH);
-});
 
 const open = require('open');
 require('dotenv').config();
@@ -368,20 +371,11 @@ wppconnect.create({
     ]
   },
 
-  catchQR: async (qrCode) => {
-    try {
-      lastQR = await QRCode.toDataURL(qrCode, {
-        errorCorrectionLevel: 'L',
-        width: 350,
-        margin: 1
-      });
-
-      console.log('✅ QR IMAGE GENERATED');
-      console.log('QR length:', lastQR.length); // HARUS > 5000
-    } catch (err) {
-      console.error('❌ QR GENERATE ERROR:', err);
-    }
+  catchQR: (qrCode, asciiQR) => {
+    lastQR = asciiQR;
+    console.log('✅ ASCII QR siap');
   },
+  
 
   statusFind: (status) => {
     console.log('📡 STATUS SESSION:', status);
