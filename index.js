@@ -1901,7 +1901,7 @@ Pendaftaran Anda *tetap diterima* dan akan diproses oleh panitia.`
     no_hp1: data.no_hp1,
     no_hp2: data.no_hp2 || null,
     email: data.email,
-    whatsapp: normalizePhone(data.no_hp1)
+    whatsapp: normalizePhone(data.no_hp1),
     wa_target: from
   })
   .select()
