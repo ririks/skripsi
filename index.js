@@ -359,7 +359,7 @@ function formatWA(number) {
 const qrcode = require('qrcode');
 
 wppconnect.create({
-  session: 'ppdbBot',
+  session: 'ppdbBotv2',
   headless: true,
   autoClose: false,
   waitForLogin: false,
