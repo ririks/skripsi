@@ -108,6 +108,7 @@ server.post('/midtrans/webhook', async (req, res) => {
     console.log('📥 MIDTRANS WEBHOOK:', req.body);
 
     const notif = req.body;
+const waFrom = bayar.wa_from;
 
     // ABAIKAN STATUS GAGAL
     if (!['settlement', 'capture'].includes(notif.transaction_status)) {
@@ -125,12 +126,13 @@ server.post('/midtrans/webhook', async (req, res) => {
       console.warn('⏳ Pembayaran belum ada, tunggu retry:', notif.order_id);
       return res.status(200).send('OK');
     }
-    if (paymentTimeouts.has(bayar.whatsapp)) {
-      clearTimeout(paymentTimeouts.get(bayar.whatsapp));
-      paymentTimeouts.delete(bayar.whatsapp);
-    }
-    
-    paymentSessions.delete(bayar.whatsapp);
+    if (paymentTimeouts.has(waFrom)) {
+  clearTimeout(paymentTimeouts.get(waFrom));
+  paymentTimeouts.delete(waFrom);
+}
+
+paymentSessions.delete(waFrom);
+
     const noPendaftaran = bayar.no_pendaftaran;
     // Update status pembayaran
     await supabase
@@ -1916,6 +1918,7 @@ const { error: bayarErr } = await supabase
     order_id: orderIdMidtrans,
     no_pendaftaran: idPendaftaran,
     whatsapp: extractPhoneNumber(from),
+    wa_from: from, 
     gross_amount: biaya,
     payment_type: 'snap',
     transaction_status: 'pending'
