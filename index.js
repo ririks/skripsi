@@ -317,10 +317,9 @@ Password: *${password}*
 });
 
 server.use(paymentRouter);
-server.listen(3000, () => {
-  console.log('🚀 Server berjalan di http://localhost:3000');
+server.listen(8080, () => {
+  console.log(`Server running on port ${PORT}`);
 });
-
 
 server.post('/send-message', async (req, res) => {
   const { to, message } = req.body;
