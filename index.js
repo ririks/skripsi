@@ -897,22 +897,21 @@ row('No HP Ibu', data.no_hp_ibu);
 
 // ===== DATA WALI (OPSIONAL) =====
 if (
-  lanjutan.nama_wali ||
-  lanjutan.pekerjaan_wali ||
-  lanjutan.no_hp_wali
+  data.nama_wali ||
+  data.pekerjaan_wali ||
+  data.no_hp_wali ||
+  data.hubungan_wali
 ) {
   doc.moveDown();
   doc.font('Helvetica-Bold').text('D. DATA WALI');
   doc.moveDown(0.5);
   doc.font('Helvetica');
 
-  row('Nama Wali', lanjutan.nama_wali || '-');
-  row('Pekerjaan Wali', lanjutan.pekerjaan_wali || '-');
-  row('No HP Wali', lanjutan.no_hp_wali || '-');
-  row('Hubungan Wali', lanjutan.hubungan_wali || '-');
+  row('Nama Wali', data.nama_wali || '-');
+  row('Pekerjaan Wali', data.pekerjaan_wali || '-');
+  row('No HP Wali', data.no_hp_wali || '-');
+  row('Hubungan Wali', data.hubungan_wali || '-');
 }
-
-doc.moveDown();
 
 // ===== ALAMAT =====
 doc.font('Helvetica-Bold').text('D. DATA ALAMAT');
