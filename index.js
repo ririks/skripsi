@@ -268,32 +268,36 @@ await new Promise(r => stream.on('finish', r));
 // =============================
 // 📲 KIRIM PDF KE WHATSAPP
 // =============================
-if (globalClient && isValidWANumber(bayar.whatsapp)) {
-  const waTarget = toWAId(bayar.whatsapp.trim());
+if (globalClient) {
+  const waTarget = `${bayar.whatsapp}@c.us`;
 
-  try {
-    await globalClient.sendFile(
-      waTarget,
-      pdfPath,
-      `${noPendaftaran}.pdf`,
-      `✅ *Pembayaran Berhasil* ...`
-    );
+await globalClient.sendFile(
+  waTarget,
+  pdfPath,
+    `${noPendaftaran}.pdf`,
+    `✅ *Pembayaran Berhasil*
 
-    await globalClient.sendText(
-      waTarget,
-      '✍️ Ketik *kembali* untuk kembali ke menu.'
-    );
+🆔 Order ID: *${notif.order_id}*
+👤 Nama: ${daftar.nama}
 
-  } catch (e) {
-    console.error('❌ GAGAL KIRIM WA:', waTarget, e.message);
+🔐 *Akun Login*
+Username: *${username}*
+Password: *${password}*
+
+📄 Bukti pendaftaran terlampir`
+  );
+  await globalClient.sendText(
+    daftar.whatsapp,
+    '✍️ Ketik *kembali* untuk kembali ke menu.'
+  );
+}
+
+
+    res.status(200).send('OK');
+  } catch (err) {
+    console.error('❌ WEBHOOK ERROR:', err);
+    res.status(500).send('ERROR');
   }
-}
-
-res.status(200).send('OK');
-} catch (err) {
-console.error(err);
-res.status(200).send('OK'); // webhook tetap 200
-}
 });
 
 server.use(paymentRouter);
@@ -324,9 +328,7 @@ server.post('/send-message', async (req, res) => {
   }
 });
 
-function toWAId(number) {
-  return `${number.trim()}@c.us`;
-}
+
 
 function formatWA(number) {
   if (!number) return null;
@@ -383,12 +385,7 @@ wppconnect.create({
 .catch(console.error);
 
 
-function isValidWANumber(number) {
-  return typeof number === 'string'
-    && number.startsWith('62')
-    && number.length >= 10
-    && number.length <= 15;
-}
+
 
 function getKelompokJenjang(kodeJenjang) {
   // Toddler, Playgroup, TK, SD
@@ -416,7 +413,7 @@ function generatePassword(length = 6) {
   return pass;
 }
 
-async function simpanLogin(username, password, data, waNumber) {
+async function simpanLogin(username, password, data) {
   const { data: res, error } = await supabase
     .from('akun_login')
     .insert({
@@ -424,7 +421,7 @@ async function simpanLogin(username, password, data, waNumber) {
       password: password.trim(),
       nama: data.nama,
       jenjang: data.jenjang,
-      whatsapp: waNumber
+      //whatsapp: data.whatsapp_from
     })
     .select();
 
@@ -569,19 +566,14 @@ async function getKuotaDashboard() {
 // 📬 Fungsi utama
 // =============================
 async function start(client) {
-  
   client.onMessage(async (message) => {
     try {
-      const waId = message.from;           // 62812xxx@c.us
-const waNumber = normalizeWA(waId);  // 62812xxx
-
-
       const from = message.from;
       const textMsg = (message.body || "").toLowerCase();
 // =============================
 // 🔒 MODE PEMBAYARAN AKTIF
 // =============================
-if (paymentSessions.has(waNumber) && textMsg !== 'batal') {
+if (paymentSessions.has(from) && textMsg !== 'batal') {
   await client.sendText(
     from,
 `⏳ *Pembayaran Masih Menunggu*
@@ -598,15 +590,15 @@ Silakan:
 // =============================
 // ❌ BATAL PEMBAYARAN 
 // =============================
-if (textMsg === 'batal' && paymentSessions.has(waNumber)) {
+if (textMsg === 'batal' && paymentSessions.has(from)) {
 
   // 🛑 hentikan timer
-  if (paymentTimeouts.has(waNumber)) {
+  if (paymentTimeouts.has(from)) {
     clearTimeout(paymentTimeouts.get(from));
-    paymentTimeouts.delete(waNumber);
+    paymentTimeouts.delete(from);
   }
 
-  const session = paymentSessions.get(waNumber);
+  const session = paymentSessions.get(from);
   if (!session) {
     console.warn('⚠️ paymentSession kosong saat batal:', from);
     return;
@@ -627,7 +619,7 @@ if (textMsg === 'batal' && paymentSessions.has(waNumber)) {
     .eq('no_pendaftaran', no_pendaftaran);
 
   // 3️⃣ BERSIHKAN SESSION
-  paymentSessions.delete(waNumber);
+  paymentSessions.delete(from);
   sessions.delete(from);
 
   await client.sendText(
@@ -983,7 +975,7 @@ return; // 🔴 WAJIB
               if (selected && selected !== 'daftar') {
                 sessions.delete(from);
               } else {
-                await handleCombinedForm(client, message, from, waNumber);
+                await handleCombinedForm(client, message, from);
                 return;
               }
             }
@@ -1217,13 +1209,12 @@ case 'spmb':
                       }
                                  
                       case 'konfirmasi_bayar': {
-                        if (!paymentSessions.has(waNumber)) {
+                        if (!paymentSessions.has(from)) {
                           await client.sendText(from, '⚠️ Tidak ada transaksi aktif.');
                           return;
                         }
                       
-                        const { orderId, no_pendaftaran } = paymentSessions.get(waNumber);
-
+                        const { orderId, data } = paymentSessions.get(from);
                       
                         // SIMULASI SETTLEMENT MIDTRANS
                         await simulateSettlement(orderId);
@@ -1279,7 +1270,7 @@ case 'spmb':
                           from,
                           '✍️ Ketik *kembali* untuk kembali ke menu.'
                         );
-                        paymentSessions.delete(waNumber);
+                        paymentSessions.delete(from);
                         break;
                       }                      
                 case 'kontak':
@@ -1751,7 +1742,7 @@ Note: Jenjang Pendidkan ada Toddler, Playgroup, Kelompok A, Kelompok B, SD, SMP,
 // =============================
 // 📥 Handle Form + Generate & Kirim PDF
 // =============================
-async function handleCombinedForm(client, message, from, waNumber)   {
+async function handleCombinedForm(client, message, from) {
   const text = (message.body || '').trim();
 
   // batal
@@ -1831,7 +1822,7 @@ Jika tidak ada, boleh dikosongkan.`
   return;
 }
 
-const sudahAda = await cekSudahDaftar(waNumber, data.nama);
+    const sudahAda = await cekSudahDaftar(from, data.nama); 
     
     if (sudahAda) {
       await client.sendText(
@@ -1903,7 +1894,7 @@ Pendaftaran Anda *tetap diterima* dan akan diproses oleh panitia.`
     no_hp1: data.no_hp1,
     no_hp2: data.no_hp2 || null,
     email: data.email,
-    whatsapp: waNumber 
+    whatsapp: normalizePhone(data.no_hp1)
   })
   .select()
   .single();
@@ -1927,7 +1918,7 @@ const { error: bayarErr } = await supabase
   .insert({
     order_id: orderIdMidtrans,
     no_pendaftaran: idPendaftaran,
-    whatsapp: waNumber,
+    whatsapp: normalizePhone(data.no_hp1),
     gross_amount: biaya,
     payment_type: 'snap',
     transaction_status: 'pending'
@@ -1980,21 +1971,19 @@ await supabase
     (Setelah pembayaran, sistem akan memproses secara otomatis)`
     );    
 
-    paymentSessions.set(waNumber, {
+    paymentSessions.set(from, {
       orderId: orderIdMidtrans,
       no_pendaftaran: idPendaftaran
     });
-    
 
     // =============================
 // ⏳ AUTO BATAL 30 MENIT
 // =============================
 const timeoutId = setTimeout(async () => {
   // cek apakah masih pending
-  if (!paymentSessions.has(waNumber))
- return;
+  if (!paymentSessions.has(from)) return;
 
- const { orderId, no_pendaftaran } = paymentSessions.get(waNumber);
+  const { orderId, no_pendaftaran } = paymentSessions.get(from);
 
   console.log('⏳ AUTO BATAL PEMBAYARAN:', orderId);
 
@@ -2010,8 +1999,8 @@ const timeoutId = setTimeout(async () => {
     .delete()
     .eq('no_pendaftaran', no_pendaftaran);
 
-    paymentSessions.delete(waNumber);
-  //paymentTimeouts.delete(from);
+  paymentSessions.delete(from);
+  paymentTimeouts.delete(from);
 
   if (globalClient) {
     await globalClient.sendText(
@@ -2027,7 +2016,7 @@ dalam *30 menit*.
   }
 }, 30 * 60 * 1000); // 30 menit
 
-paymentTimeouts.set(waNumber, timeoutId);
+paymentTimeouts.set(from, timeoutId);
 
 
     sessions.delete(from);
@@ -2057,16 +2046,13 @@ function normalizeLanjutanData(data) {
         ? rest.kebutuhan_khusus.toLowerCase().includes('ya')
         : false
   };
-}
+}z
 
-function normalizeWA(from) {
-  // dari: 62812xxxx@c.us
-  return from.replace('@c.us', '');
-}
-
-function toWAId(number) {
-  // dari: 62812xxxx
-  return `${number}@c.us`;
+function normalizePhone(number) {
+  let n = number.replace(/\D/g, '');
+  if (n.startsWith('0')) n = '62' + n.slice(1);
+  if (!n.startsWith('62')) n = '62' + n;
+  return n;
 }
 
 
