@@ -3,7 +3,9 @@ FROM node:18-slim
 WORKDIR /app
 
 COPY package.json ./
-RUN npm install --force
+
+# ⛔ MATIKAN SCRIPT prepare (husky, build internal)
+RUN npm install --force --ignore-scripts
 
 COPY . .
 
