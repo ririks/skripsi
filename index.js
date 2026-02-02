@@ -391,7 +391,6 @@ wppconnect.create({
   start(client);
 })
 .catch(console.error);
-});
 
 function getKelompokJenjang(kodeJenjang) {
   // Toddler, Playgroup, TK, SD
