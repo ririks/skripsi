@@ -268,11 +268,13 @@ await new Promise(r => stream.on('finish', r));
 // =============================
 // 📲 KIRIM PDF KE WHATSAPP
 // =============================
-if (globalClient) {
-  await globalClient.sendFile(
-    toWAId(bayar.whatsapp),
-    //daftar.whatsapp,
-    pdfPath,
+if (globalClient && isValidWANumber(bayar.whatsapp)) {
+  const waTarget = toWAId(bayar.whatsapp.trim());
+
+  try {
+    await globalClient.sendFile(
+      waTarget,
+      pdfPath,
     `${noPendaftaran}.pdf`,
     `✅ *Pembayaran Berhasil*
 
@@ -286,18 +288,15 @@ Password: *${password}*
 📄 Bukti pendaftaran terlampir`
   );
   await globalClient.sendText(
-    toWAId(daftar.whatsapp),
+    toWAId(bayar.whatsapp),
     '✍️ Ketik *kembali* untuk kembali ke menu.'
   );
+} catch (e) {
+  console.error('❌ GAGAL KIRIM WA:', waTarget, e.message);
 }
-
-
-    res.status(200).send('OK');
-  } catch (err) {
-    console.error('❌ WEBHOOK ERROR:', err);
-    res.status(500).send('ERROR');
-  }
-});
+} else {
+console.warn('⚠️ Nomor WA tidak valid, skip kirim:', bayar.whatsapp);
+}
 
 server.use(paymentRouter);
 
@@ -350,6 +349,9 @@ function formatWA(number) {
   return `${n}@c.us`;
 }
 
+function toWAId(number) {
+  return `${number.trim()}@c.us`;
+}
 //const QRCode = require('qrcode');
 
 wppconnect.create({
@@ -384,7 +386,12 @@ wppconnect.create({
 .catch(console.error);
 
 
-
+function isValidWANumber(number) {
+  return typeof number === 'string'
+    && number.startsWith('62')
+    && number.length >= 10
+    && number.length <= 15;
+}
 
 function getKelompokJenjang(kodeJenjang) {
   // Toddler, Playgroup, TK, SD
