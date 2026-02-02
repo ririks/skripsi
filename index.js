@@ -271,11 +271,12 @@ await new Promise(r => stream.on('finish', r));
 if (globalClient) {
   const waTarget = `${bayar.whatsapp}@c.us`;
 
-await globalClient.sendFile(
-  waTarget,
-  pdfPath,
-    `${noPendaftaran}.pdf`,
-    `✅ *Pembayaran Berhasil*
+  try {
+    await globalClient.sendFile(
+      waTarget,
+      pdfPath,
+      `${noPendaftaran}.pdf`,
+      `✅ *Pembayaran Berhasil*
 
 🆔 Order ID: *${notif.order_id}*
 👤 Nama: ${daftar.nama}
@@ -285,12 +286,18 @@ Username: *${username}*
 Password: *${password}*
 
 📄 Bukti pendaftaran terlampir`
-  );
-  await globalClient.sendText(
-    daftar.whatsapp,
-    '✍️ Ketik *kembali* untuk kembali ke menu.'
-  );
+    );
+
+    await globalClient.sendText(
+      waTarget,
+      '✍️ Ketik *kembali* untuk kembali ke menu.'
+    );
+
+  } catch (waErr) {
+    console.error('❌ GAGAL KIRIM WA:', waErr.message);
+  }
 }
+
 
 
     res.status(200).send('OK');
