@@ -354,7 +354,7 @@ function formatWA(number) {
   return `${n}@c.us`;
 }
 
-const QRCode = require('qrcode');
+//const QRCode = require('qrcode');
 
 wppconnect.create({
   session: 'ppdbBotv2',
