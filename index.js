@@ -109,7 +109,10 @@ const paymentTimeouts = new Map();
 // 🚀 Jalankan Bot
 // =============================
 let globalClient = null;
-const PORT = 3000;
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 const QR_PATH = path.join(__dirname, 'qr.png');
 server.use(express.json());
 // =============================
