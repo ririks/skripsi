@@ -2311,8 +2311,6 @@ async function cekSudahDaftar(waUser, nama) {
   return data && data.length > 0;
 }
 
-const waUser = getUserWA(message);
-
 // =============================
 // 📋 Menu WhatsApp
 // =============================
