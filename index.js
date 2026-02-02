@@ -108,7 +108,8 @@ server.post('/midtrans/webhook', async (req, res) => {
     console.log('📥 MIDTRANS WEBHOOK:', req.body);
 
     const notif = req.body;
-const waFrom = bayar.wa_from;
+
+
 
     // ABAIKAN STATUS GAGAL
     if (!['settlement', 'capture'].includes(notif.transaction_status)) {
@@ -130,6 +131,8 @@ const waFrom = bayar.wa_from;
   clearTimeout(paymentTimeouts.get(waFrom));
   paymentTimeouts.delete(waFrom);
 }
+
+const waFrom = formatWA(bayar.whatsapp);
 
 paymentSessions.delete(waFrom);
 
@@ -1919,7 +1922,7 @@ const { error: bayarErr } = await supabase
     order_id: orderIdMidtrans,
     no_pendaftaran: idPendaftaran,
     whatsapp: extractPhoneNumber(from),
-    wa_from: from, 
+    //wa_from: from, 
     gross_amount: biaya,
     payment_type: 'snap',
     transaction_status: 'pending'
