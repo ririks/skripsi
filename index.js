@@ -19,6 +19,36 @@ server.use(cors({
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type'],
 }));
+server.get('/qr', (req, res) => {
+  if (!fs.existsSync(QR_PATH)) {
+    return res.send(`
+      <h3>QR belum tersedia</h3>
+      <p>Bot belum menghasilkan QR atau sudah login</p>
+    `);
+  }
+
+  res.send(`
+    <html>
+      <head>
+        <title>Scan QR WhatsApp</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+      </head>
+      <body style="text-align:center;font-family:sans-serif">
+        <h2>Scan QR WhatsApp Bot</h2>
+        <img src="/qr-image" width="300"/>
+        <p>Scan menggunakan WhatsApp Admin</p>
+      </body>
+    </html>
+  `);
+});
+
+server.get('/qr-image', (req, res) => {
+  if (!fs.existsSync(QR_PATH)) {
+    return res.status(404).send('QR belum ada');
+  }
+  res.sendFile(QR_PATH);
+});
+
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 
@@ -338,26 +368,26 @@ function formatWA(number) {
   return `${n}@c.us`;
 }
 
+const qrcode = require('qrcode');
+
 wppconnect.create({
   session: 'ppdbBot',
-  headless: false,
+  headless: true,
   autoClose: false,
   waitForLogin: true,
-  useChrome: true,
-  catchQR: (qrCode, asciiQR) => {
-    console.log(asciiQR);
+  catchQR: async (qrCode) => {
+    await qrcode.toFile(QR_PATH, qrCode);
+    console.log('✅ QR disimpan:', QR_PATH);
   },
   statusFind: (status) => {
     console.log('📡 STATUS SESSION:', status);
   }
 })
 .then(client => {
-  console.log('✅ BOT CONNECTED');
   globalClient = client;
   start(client);
 })
-.catch(err => {
-  console.error('❌ ERROR WPPCONNECT:', err);
+.catch(console.error);
 });
 
 function getKelompokJenjang(kodeJenjang) {
