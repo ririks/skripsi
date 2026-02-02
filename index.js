@@ -10,9 +10,10 @@ const PDFDocument = require('pdfkit');
 //const app = require('../spmb/api/server');
 const express = require('express');
 const cors = require('cors');
-
+const QR_PATH = path.join(__dirname, 'qr.png');
 const server = express();
-
+server.use(express.json());
+server.use(express.urlencoded({ extended: true }));
 // ✅ CORS HARUS SETELAH server dibuat
 server.use(cors({
   origin: '*', // dev mode
@@ -48,9 +49,6 @@ server.get('/qr-image', (req, res) => {
   }
   res.sendFile(QR_PATH);
 });
-
-server.use(express.json());
-server.use(express.urlencoded({ extended: true }));
 
 const open = require('open');
 require('dotenv').config();
@@ -113,14 +111,9 @@ const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-const QR_PATH = path.join(__dirname, 'qr.png');
-server.use(express.json());
 // =============================
 // 🔔 MIDTRANS WEBHOOK
 // =============================
-server.use(express.json());
-server.use(express.urlencoded({ extended: true }));
-
 server.post('/midtrans/webhook', async (req, res) => {
   try {
     console.log('📥 MIDTRANS WEBHOOK:', req.body);
@@ -317,9 +310,6 @@ Password: *${password}*
 });
 
 server.use(paymentRouter);
-server.listen(8080, () => {
-  console.log(`Server running on port ${PORT}`);
-});
 
 server.post('/send-message', async (req, res) => {
   const { to, message } = req.body;
