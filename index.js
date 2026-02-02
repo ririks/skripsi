@@ -366,11 +366,23 @@ wppconnect.create({
   session: 'ppdbBot',
   headless: true,
   autoClose: false,
-  waitForLogin: true,
+  waitForLogin: false,
+
+  puppeteerOptions: {
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--single-process'
+    ]
+  },
+
   catchQR: async (qrCode) => {
     await qrcode.toFile(QR_PATH, qrCode);
     console.log('✅ QR disimpan:', QR_PATH);
   },
+
   statusFind: (status) => {
     console.log('📡 STATUS SESSION:', status);
   }
