@@ -271,8 +271,8 @@ await new Promise(r => stream.on('finish', r));
 // 📲 KIRIM PDF KE WHATSAPP
 // =============================
 if (globalClient) {
-  await globalClient.sendFile(
-    daftar.whatsapp,
+ await globalClient.sendFile(
+  waFrom,
     pdfPath,
     `${noPendaftaran}.pdf`,
     `✅ *Pembayaran Berhasil*
@@ -287,9 +287,10 @@ Password: *${password}*
 📄 Bukti pendaftaran terlampir`
   );
   await globalClient.sendText(
-    daftar.whatsapp,
-    '✍️ Ketik *kembali* untuk kembali ke menu.'
-  );
+  waFrom,
+  '✍️ Ketik *kembali* untuk kembali ke menu.'
+);
+
 }
 
 
