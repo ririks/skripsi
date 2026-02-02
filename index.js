@@ -275,28 +275,26 @@ if (globalClient && isValidWANumber(bayar.whatsapp)) {
     await globalClient.sendFile(
       waTarget,
       pdfPath,
-    `${noPendaftaran}.pdf`,
-    `✅ *Pembayaran Berhasil*
+      `${noPendaftaran}.pdf`,
+      `✅ *Pembayaran Berhasil* ...`
+    );
 
-🆔 Order ID: *${notif.order_id}*
-👤 Nama: ${daftar.nama}
+    await globalClient.sendText(
+      waTarget,
+      '✍️ Ketik *kembali* untuk kembali ke menu.'
+    );
 
-🔐 *Akun Login*
-Username: *${username}*
-Password: *${password}*
-
-📄 Bukti pendaftaran terlampir`
-  );
-  await globalClient.sendText(
-    toWAId(bayar.whatsapp),
-    '✍️ Ketik *kembali* untuk kembali ke menu.'
-  );
-} catch (e) {
-  console.error('❌ GAGAL KIRIM WA:', waTarget, e.message);
+  } catch (e) {
+    console.error('❌ GAGAL KIRIM WA:', waTarget, e.message);
+  }
 }
-} else {
-console.warn('⚠️ Nomor WA tidak valid, skip kirim:', bayar.whatsapp);
+
+res.status(200).send('OK');
+} catch (err) {
+console.error(err);
+res.status(200).send('OK'); // webhook tetap 200
 }
+});
 
 server.use(paymentRouter);
 
@@ -326,7 +324,9 @@ server.post('/send-message', async (req, res) => {
   }
 });
 
-
+function toWAId(number) {
+  return `${number.trim()}@c.us`;
+}
 
 function formatWA(number) {
   if (!number) return null;
@@ -349,9 +349,6 @@ function formatWA(number) {
   return `${n}@c.us`;
 }
 
-function toWAId(number) {
-  return `${number.trim()}@c.us`;
-}
 //const QRCode = require('qrcode');
 
 wppconnect.create({
