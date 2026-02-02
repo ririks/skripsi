@@ -24,43 +24,25 @@ server.use(cors({
 server.get('/qr', (req, res) => {
   if (!lastQR) {
     return res.send(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8" />
-          <title>QR WhatsApp</title>
-        </head>
-        <body style="text-align:center;font-family:sans-serif">
-          <h2>⏳ Menunggu QR</h2>
-          <p>Bot belum siap atau sudah login</p>
-        </body>
-      </html>
+      <h2>⏳ Menunggu QR</h2>
     `);
   }
 
-  res.setHeader('Content-Type', 'text/html');
   res.send(`
     <!DOCTYPE html>
     <html>
-      <head>
-        <meta charset="UTF-8" />
-        <title>Scan QR WhatsApp</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      </head>
-      <body style="text-align:center;font-family:sans-serif">
-        <h2>Scan QR WhatsApp</h2>
-        <img 
-          src="${lastQR}" 
-          alt="QR WhatsApp"
-          style="width:300px;height:300px;border:1px solid #ccc"
-        />
-        <p>Scan menggunakan WhatsApp → Perangkat Tertaut</p>
-      </body>
+    <head>
+      <meta charset="UTF-8">
+      <title>Scan QR WhatsApp</title>
+    </head>
+    <body style="text-align:center;font-family:sans-serif">
+      <h2>Scan QR WhatsApp</h2>
+      <img src="${lastQR}" width="300" height="300" />
+      <p>Scan menggunakan WhatsApp → Perangkat Tertaut</p>
+    </body>
     </html>
   `);
 });
-
-
 
 server.get('/qr-image', (req, res) => {
   if (!fs.existsSync(QR_PATH)) {
@@ -397,10 +379,22 @@ wppconnect.create({
   },
 
   catchQR: (qrCode, asciiQR, attempt, urlCode) => {
-    // ⛔ JANGAN encode ulang
-    lastQR = urlCode; // ← INI SUDAH DATA URL
-    console.log('✅ QR diterima (URL)');
-  },
+    if (!urlCode) return;
+  
+    // hapus newline & spasi
+    let clean = urlCode.replace(/\s/g, '');
+  
+    // pastikan ada prefix data:image
+    if (!clean.startsWith('data:image')) {
+      clean = 'data:image/png;base64,' + clean;
+    }
+  
+    lastQR = clean;
+  
+    console.log('✅ QR diterima (FIXED)');
+    console.log('QR length:', lastQR.length);
+  },  
+  
 
   statusFind: (status) => {
     console.log('📡 STATUS SESSION:', status);
