@@ -12,6 +12,7 @@ const express = require('express');
 const cors = require('cors');
 const QR_PATH = path.join(__dirname, 'qr.png');
 const server = express();
+let lastQR = null;   
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 // ✅ CORS HARUS SETELAH server dibuat
@@ -21,23 +22,18 @@ server.use(cors({
   allowedHeaders: ['Content-Type'],
 }));
 server.get('/qr', (req, res) => {
-  if (!fs.existsSync(QR_PATH)) {
+  if (!lastQR) {
     return res.send(`
       <h3>QR belum tersedia</h3>
-      <p>Bot belum menghasilkan QR atau sudah login</p>
+      <p>Bot sudah login atau QR belum di-generate</p>
     `);
   }
 
   res.send(`
     <html>
-      <head>
-        <title>Scan QR WhatsApp</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-      </head>
-      <body style="text-align:center;font-family:sans-serif">
+      <body style="text-align:center">
         <h2>Scan QR WhatsApp Bot</h2>
-        <img src="/qr-image" width="300"/>
-        <p>Scan menggunakan WhatsApp Admin</p>
+        <img src="${lastQR}" width="300"/>
       </body>
     </html>
   `);
@@ -368,19 +364,9 @@ wppconnect.create({
   autoClose: false,
   waitForLogin: false,
 
-  puppeteerOptions: {
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--single-process'
-    ]
-  },
-
   catchQR: async (qrCode) => {
-    await qrcode.toFile(QR_PATH, qrCode);
-    console.log('✅ QR disimpan:', QR_PATH);
+    lastQR = await qrcode.toDataURL(qrCode);
+    console.log('✅ QR diterima');
   },
 
   statusFind: (status) => {
