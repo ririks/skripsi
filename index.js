@@ -361,6 +361,16 @@ wppconnect.create({
   autoClose: false,
   waitForLogin: false,
 
+  puppeteerOptions: {
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--single-process'
+    ]
+  },
+
   catchQR: async (qrCode) => {
     lastQR = await qrcode.toDataURL(qrCode);
     console.log('✅ QR diterima');
@@ -368,17 +378,14 @@ wppconnect.create({
 
   statusFind: (status) => {
     console.log('📡 STATUS SESSION:', status);
-    if (status === 'isLogged') {
-      console.log('✅ BOT SUDAH LOGIN — QR TIDAK DIPERLUKAN');
-    }
   }
-  
 })
 .then(client => {
   globalClient = client;
   start(client);
 })
 .catch(console.error);
+
 
 function getKelompokJenjang(kodeJenjang) {
   // Toddler, Playgroup, TK, SD
