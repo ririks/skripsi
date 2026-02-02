@@ -1886,7 +1886,7 @@ Pendaftaran Anda *tetap diterima* dan akan diproses oleh panitia.`
     const idPendaftaran = await generateNoPendaftaran(data.jenjang);
 
     //data.id = idPendaftaran;
-    data.whatsapp_from = from;
+    //data.whatsapp_from = from;
 
     // ===== SIMPAN PENDAFTARAN =====
     const { data: insertData, error: insertErr } = await supabase
@@ -1903,7 +1903,7 @@ Pendaftaran Anda *tetap diterima* dan akan diproses oleh panitia.`
     no_hp1: data.no_hp1,
     no_hp2: data.no_hp2 || null,
     email: data.email,
-    whatsapp: waNumber
+    whatsapp: waNumber 
   })
   .select()
   .single();
