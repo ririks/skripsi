@@ -1416,11 +1416,11 @@ ketik *batal* untuk membatalkan.`
     let jadwal = '';
   
     if (userJadwal.jenjang.toLowerCase().includes('sd')) {
-      jadwal = '📅 Tes SD: 15 November 2025';
+      jadwal = '📅 Tes SD: Jadwal tes akan diinformasikan panitia';
     } else if (userJadwal.jenjang.toLowerCase().includes('smp')) {
-      jadwal = '📅 Tes SMP: 16 November 2025';
+      jadwal = '📅 Tes SMP: Jadwal tes akan diinformasikan panitia';
     } else if (userJadwal.jenjang.toLowerCase().includes('sma')) {
-      jadwal = '📅 Tes SMA: 17 November 2025';
+      jadwal = '📅 Tes SMA: Jadwal tes akan diinformasikan panitia';
     } else {
       jadwal = '📅 Jadwal tes akan diinformasikan panitia.';
     }
